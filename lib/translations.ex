@@ -42,24 +42,25 @@ defmodule Translations do
 
   process_line = fn (line, {lino, in_time_section, chunk, lang}) ->
     line = String.rstrip(line)
-    cond do
-      line == "LC_TIME" ->
-        in_time_section = true
-      line == "END LC_TIME" ->
-        in_time_section = false
-      line == "" or line =~ ~r/^%/ ->
-        :ok
-      in_time_section ->
-        chunk = chunk <> String.rstrip(line, ?/)
-        if !String.ends_with?(line, "/") do
-          # IO.puts "processing a chunk #{chunk}"
-          process_entry.(chunk, lang)
-          chunk = ""
-        end
-      true -> :ok
-    end
+    unless line == "END LC_TIME" do
+      cond do
+        line == "LC_TIME" ->
+          in_time_section = true
+        line == "" or line =~ ~r/^%/ ->
+          :ok
+        in_time_section ->
+          chunk = chunk <> String.rstrip(line, ?/)
+          if !String.ends_with?(line, "/") do
+            process_entry.(chunk, lang)
+            chunk = ""
+          end
+        true -> :ok
+      end
 
-    {lino+1, in_time_section, chunk, lang}
+      {:cont, {lino+1, in_time_section, chunk, lang}}
+    else
+      {:halt, :ok}
+    end
   end
 
   # @glibc_locale "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=localedata/locales/"
@@ -76,6 +77,7 @@ defmodule Translations do
                 bn_IN: [:bn, :"bn-IN"],
                 bn_BD: [:"bn-BD"],
                 ca_FR: [:ca, :"ca-FR"],
+                csb_PL: [:csb, :"csb-PL"],
                 da_DK: [:da],
                 de_DE: [:de, :"de-DE"],
                 de_LU: [:"de-LU"],
@@ -83,11 +85,13 @@ defmodule Translations do
                 nl_NL: [:nl],
                 fr_FR: [:fr, :"fr-FR"],
                 fr_CA: [:"fr-CA"],
+                hi_IN: [:hi, :"hi-IN"],
                 hu_HU: [:hu, :"hu-HU"],
                 it_CH: [:"it-CH"],
                 it_IT: [:it, :"it-IT"],
                 ja_JP: [:ja, :"ja-JP"],
                 ko_KR: [:ko, :"ko-KR"],
+                lv_LV: [:lv, :"lv-LV"],
                 ru_RU: [:ru, :"ru-RU"],
                 ug_CN: [:ug, :"ug-CN"],
                 vi_VN: [:vi, :"vi-VN"],
@@ -107,14 +111,14 @@ defmodule Translations do
     #   HTTPotion.get(@glibc_locale <> :erlang.atom_to_binary(lang, :utf8))
     # String.split(body, ~r/\n/)
     File.stream!("./localedata/locales/" <> :erlang.atom_to_binary(lang, :utf8))
-    |> Enum.reduce({0, false, "", {lang, aliases}}, process_line)
+    |> Enum.reduce_while({0, false, "", {lang, aliases}}, process_line)
   end
 
   @locale_list
   |> Enum.each(localedef)
 
-  # generate a list of function clausess,
-  #     to return {:error, :unknown} as the last clause
+  # generate a list of default function clausess,
+  #     to return {:error, :unknown} as the last
   #
   #     def weekday_names_abbr(_) -> {:error, :unknown}
   #         weekday_names,
