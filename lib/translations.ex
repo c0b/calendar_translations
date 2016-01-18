@@ -29,9 +29,7 @@ defmodule Translations do
           }
 
   process_entry = fn(chunk, {lang, aliases}) ->
-    # IO.puts "inspecting on : #{chunk} with #{lang}"
-    [ word, rest ] = String.split(chunk)
-    # IO.puts "starting with #{word} and rest #{rest}, processing on #{lang}"
+    [ word, rest ] = String.split(chunk, ~r{\s}, parts: 2)
     case @names[word] do
       nil -> :ok
       name ->
@@ -52,11 +50,8 @@ defmodule Translations do
       line == "" or line =~ ~r/^%/ ->
         :ok
       in_time_section ->
-        chunk_end = !String.ends_with?(line, "/")
-        chunk = chunk <> (line
-                          |> String.rstrip(?/)
-                          |> String.strip)
-        if chunk_end do
+        chunk = chunk <> String.rstrip(line, ?/)
+        if !String.ends_with?(line, "/") do
           # IO.puts "processing a chunk #{chunk}"
           process_entry.(chunk, lang)
           chunk = ""
@@ -92,6 +87,7 @@ defmodule Translations do
                 it_CH: [:"it-CH"],
                 it_IT: [:it, :"it-IT"],
                 ja_JP: [:ja, :"ja-JP"],
+                ko_KR: [:ko, :"ko-KR"],
                 ru_RU: [:ru, :"ru-RU"],
                 ug_CN: [:ug, :"ug-CN"],
                 vi_VN: [:vi, :"vi-VN"],

@@ -17,6 +17,9 @@ defmodule TranslationsTest do
     assert Translations.weekday_names_abbr(:de) == {:ok, ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]}
     assert Translations.weekday_names(:"zh-TW") == {:ok,
                                                    ["週日", "週一", "週二", "週三", "週四", "週五", "週六"]}
+    assert Translations.weekday_names(:ko) == {:ok,
+                                               ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일",
+                                                "토요일"]}
 
   end
 end
